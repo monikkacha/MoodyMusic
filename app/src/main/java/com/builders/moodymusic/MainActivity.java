@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
@@ -13,6 +14,10 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.builders.moodymusic.activity.ExpressionDisplayActivity;
+import com.builders.moodymusic.constants.MoodConstants;
+import com.builders.moodymusic.interfaces.FacialExpressionCallBack;
+import com.builders.moodymusic.utils.FaceDetectionUtils;
 import com.otaliastudios.cameraview.CameraListener;
 import com.otaliastudios.cameraview.CameraView;
 import com.otaliastudios.cameraview.PictureResult;
@@ -23,7 +28,9 @@ import com.otaliastudios.cameraview.frame.FrameProcessor;
 
 import org.jetbrains.annotations.NotNull;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+import kotlin.jvm.internal.Ref;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, FacialExpressionCallBack {
 
     private static final String TAG = "MainActivity";
     int CAMERA_PERMISSION = 1004;
@@ -33,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private RelativeLayout clickImageRL;
     private RelativeLayout changeCameraFaceRL;
 
+    FaceDetectionUtils faceDetectionUtils;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
         checkForPermission();
+        faceDetectionUtils = new FaceDetectionUtils();
     }
 
     private void checkForPermission() {
@@ -72,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onPictureTaken(@NonNull @NotNull PictureResult result) {
                 super.onPictureTaken(result);
+                faceDetectionUtils.processMood(MainActivity.this, result.getData(), result.getRotation());
             }
         });
     }
@@ -104,13 +115,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.change_camera_face_rl: {
                 changeCameraFacing();
-            }break;
+            }
+            break;
             case R.id.click_image_rl: {
                 cameraView.takePicture();
-            }break;
+            }
+            break;
+        }
+    }
+
+    @Override
+    public void currentMood(MoodConstants.MOOD currentMood) {
+        if (currentMood == MoodConstants.MOOD.NO_GROUP) {
+            AppController.showToast("Solo pic only");
+        } else if (currentMood == MoodConstants.MOOD.NO_FACE) {
+            AppController.showToast("face not found , try again");
+        } else {
+            AppController.currentMood = currentMood;
+            startActivity(new Intent(this, ExpressionDisplayActivity.class));
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         }
     }
 }

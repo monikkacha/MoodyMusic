@@ -42,4 +42,6 @@ dependencies {
 
     // Camera
     implementation "com.otaliastudios:cameraview:$camera"
+
+    implementation 'com.google.mlkit:face-detection:16.1.2'
 }

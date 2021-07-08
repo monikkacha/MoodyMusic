@@ -4,9 +4,12 @@ import android.app.Application;
 import android.content.Context;
 import android.widget.Toast;
 
+import com.builders.moodymusic.constants.MoodConstants;
+
 public class AppController extends Application {
 
     public static Context context;
+    public static MoodConstants.MOOD currentMood;
 
     @Override
     public void onCreate() {
