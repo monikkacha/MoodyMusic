@@ -4,6 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.RippleDrawable;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,10 +21,16 @@ import com.builders.moodymusic.AppController;
 import com.builders.moodymusic.R;
 import com.builders.moodymusic.constants.MoodConstants;
 
+import java.io.IOException;
+
 public class ExpressionDisplayActivity extends AppCompatActivity {
 
     LinearLayout expressionBackgroundRL;
     ImageView emojiPlaceholderIV;
+    Handler handler;
+    Runnable runnable;
+    MediaPlayer mediaPlayer;
+    String musicUrl = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +40,20 @@ public class ExpressionDisplayActivity extends AppCompatActivity {
         setContentView(R.layout.activity_expression_display);
         init();
         setMood();
+        startTheMusic();
+    }
 
+    private void startTheMusic() {
+        Uri myUri = Uri.parse(musicUrl);
+        try {
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(this, myUri);
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.prepare(); //don't use prepareAsync for mp3 playback
+            mediaPlayer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void init() {
@@ -47,29 +69,38 @@ public class ExpressionDisplayActivity extends AppCompatActivity {
         if (AppController.currentMood == MoodConstants.MOOD.SAD) {
             emoji = R.drawable.sad;
             background = R.drawable.sad_bg;
+            musicUrl = AppController.getSadSong();
         } else if (AppController.currentMood == MoodConstants.MOOD.HAPPY) {
             emoji = R.drawable.happy;
             background = R.drawable.happy_bg;
+            musicUrl = AppController.getHappySong();
         } else if (AppController.currentMood == MoodConstants.MOOD.MIDDLE) {
             emoji = R.drawable.calm;
             background = R.drawable.calm_bg;
+            musicUrl = AppController.getHappySong();
         }
 
         emojiPlaceholderIV.setImageResource(emoji);
         expressionBackgroundRL.setBackground(getResources().getDrawable(background));
-
-//        while (true){
-//            new Handler().postDelayed(() -> forceRippleAnimation(expressionBackgroundRL) , 2000);
-//        }
-
+        setRippleEffect();
     }
 
-    protected void forceRippleAnimation(View view)
-    {
+    private void setRippleEffect() {
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                forceRippleAnimation(expressionBackgroundRL);
+                handler.postDelayed(this, 500);
+            }
+        };
+        handler = new Handler();
+        handler.postDelayed(runnable, 500);
+    }
+
+    protected void forceRippleAnimation(View view) {
         Drawable background = view.getBackground();
 
-        if(Build.VERSION.SDK_INT >= 21 && background instanceof RippleDrawable)
-        {
+        if (Build.VERSION.SDK_INT >= 21 && background instanceof RippleDrawable) {
             final RippleDrawable rippleDrawable = (RippleDrawable) background;
 
             rippleDrawable.setState(new int[]{android.R.attr.state_pressed, android.R.attr.state_enabled});
@@ -80,4 +111,17 @@ public class ExpressionDisplayActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        destroyMediaPlayer();
+    }
+
+    private void destroyMediaPlayer() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+    }
 }

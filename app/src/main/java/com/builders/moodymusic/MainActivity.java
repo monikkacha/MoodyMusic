@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         checkForPermission();
         faceDetectionUtils = new FaceDetectionUtils();
+        AppController.showToast("Please keep your network turn on");
     }
 
     private void checkForPermission() {
